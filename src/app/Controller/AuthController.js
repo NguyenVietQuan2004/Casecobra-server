@@ -54,7 +54,7 @@ export const login = async (req, res) => {
                 httpOnly: true,
                 secure: false, // Đảm bảo sử dụng kết nối HTTPS
                 path: '/',
-                origin: 'http://localhost:3000',
+                origin: `${process.env.ORIGIN_FRONT_END}`,
                 sameSite: 'strict',
             });
             res.status(200).json({
@@ -91,7 +91,7 @@ export const refreshToken = async (req, res) => {
                 httpOnly: true,
                 secure: false, // Đảm bảo sử dụng kết nối HTTPS
                 path: '/',
-                origin: 'http://localhost:3000',
+                origin: `${process.env.ORIGIN_FRONT_END}`,
                 sameSite: 'strict',
             });
             res.status(200).json({ accessToken: newAccessToken });

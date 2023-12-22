@@ -23,7 +23,7 @@ function sendEmailForgotPassword(user, token) {
 
                     <p>Nếu như không muốn thay đổi mật khẩu, vui lòng bỏ qua email. Email này chỉ hiệu lực trong 30p </p>
                     <p>Nếu muốn thay đổi mật khẩu vui lòng nhấn vào dường link sau đây</p>
-                    <p><a href='http://localhost:3000/forgot?code=${token}&email=${user.email}'> Nhấn vào đây </a></p>
+                    <p><a href='${process.env.ORIGIN_FRONT_END}/forgot?code=${token}&email=${user.email}'> Nhấn vào đây </a></p>
 
                     <p> Mơn nghen !!! </p>
 
