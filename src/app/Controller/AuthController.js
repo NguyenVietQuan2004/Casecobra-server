@@ -4,13 +4,13 @@ import sendEmailForgotPassword from '../utils/sendEmail.js';
 import notifyEmail from '../utils/notifyEmail.js';
 let refreshTokens = [];
 
-const generatorAccessToken = (user, timeExp = '300s') => {
-    return jwt.sign({ _id: user._id }, 'mk', {
+const generatorAccessToken = (user, timeExp = '10s') => {
+    return jwt.sign({ _id: user._id }, process.env.CODE_SIGN_JWT, {
         expiresIn: timeExp,
     });
 };
 const generatorRefreshToken = (user) => {
-    return jwt.sign({ _id: user._id }, 'mkrf');
+    return jwt.sign({ _id: user._id }, process.env.REFRESH_CODE_SIGN_JWT);
 };
 
 //
@@ -79,7 +79,7 @@ export const refreshToken = async (req, res) => {
         if (!refreshTokens.includes(refreshToken)) {
             return res.status(403).json('Token is not valid!!!!!!!!!!!!!!!!');
         }
-        jwt.verify(refreshToken, 'mkrf', (err, user) => {
+        jwt.verify(refreshToken, process.env.REFRESH_CODE_SIGN_JWT, (err, user) => {
             if (err) {
                 console.log(err);
             }
@@ -152,7 +152,7 @@ export const forgot = async (req, res) => {
     if (!user) {
         return res.status(400).json('Không tìm thấy người dùng');
     }
-    const accessTokenForgotPass = jwt.sign({}, 'mk', {
+    const accessTokenForgotPass = jwt.sign({}, process.env.CODE_SIGN_JWT, {
         expiresIn: '600s',
     });
     try {
@@ -167,7 +167,6 @@ export const forgotCode = async (req, res) => {
     const email = req.body.params.email;
     const newPassword = req.body.params.password;
     const token = req.body.params.token;
-    console.log(email, newPassword);
     if (listTokenForgotPass.includes(token)) {
         return res.status(400).json('Token is not valid');
     }

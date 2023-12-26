@@ -248,11 +248,14 @@ export const searchProducts = async (req, res) => {
 export const searchProductsQuery = async (req, res) => {
     const page = +req.query.page;
     const limit = +req.query.limit;
-    const value = req.query.value;
+    let value = req.query.value;
     const sort = +req.query.sort;
     const listBranch = req.query?.listBranch;
     const distancePrice = req.query?.distancePrice;
-    const query = {
+    if (value === 'all') {
+        value = '';
+    }
+    let query = {
         name: {
             $regex: value,
             $options: 'i',
