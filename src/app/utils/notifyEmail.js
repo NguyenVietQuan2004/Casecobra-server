@@ -15,7 +15,7 @@ function notifyEmail(user, information, locate, name) {
                         Name: `${name}`,
                     },
                 ],
-                Subject: 'RESERT PASSWORD FROM LOFI COMESTIC',
+                Subject: 'ĐẶT HÀNG THÀNH CÔNG',
                 TextPart: `Dear ${name}, welcome to Lofi Comestic! May the delivery force be with you!`,
                 HTMLPart: `<h3> Hi ${name} </h3>
              

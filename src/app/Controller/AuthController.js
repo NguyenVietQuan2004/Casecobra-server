@@ -52,10 +52,10 @@ export const login = async (req, res) => {
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
-                secure: false, // Đảm bảo sử dụng kết nối HTTPS
+                secure: true, // Đảm bảo sử dụng kết nối HTTPS
                 path: '/',
                 origin: `${process.env.ORIGIN_FRONT_END}`,
-                sameSite: 'strict',
+                sameSite: 'none',
             });
             res.status(200).json({
                 user: {
@@ -71,6 +71,7 @@ export const login = async (req, res) => {
 export const refreshToken = async (req, res) => {
     try {
         const refreshToken = req.cookies.refreshToken;
+        console.log(req.cookies);
         if (!refreshToken) {
             res.status(401).json('You are not Authenticated!');
             return;
@@ -89,10 +90,10 @@ export const refreshToken = async (req, res) => {
             refreshTokens.push(newRefreshToken);
             res.cookie('refreshToken', newRefreshToken, {
                 httpOnly: true,
-                secure: false, // Đảm bảo sử dụng kết nối HTTPS
+                secure: true, // Đảm bảo sử dụng kết nối HTTPS
                 path: '/',
                 origin: `${process.env.ORIGIN_FRONT_END}`,
-                sameSite: 'strict',
+                sameSite: 'none',
             });
             res.status(200).json({ accessToken: newAccessToken });
         });
