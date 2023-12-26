@@ -130,8 +130,6 @@ export const updateCart = async (req, res) => {
             },
         );
     } else {
-        // http://localhost:5000/auth/updateCart: { params: { query: 'add', IDProduct: } // }
-
         userAfterUpdate = await AccountsModel.findOneAndUpdate(
             { _id: req.user._id },
             {
