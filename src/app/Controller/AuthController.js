@@ -49,6 +49,7 @@ export const login = async (req, res) => {
             const token = generatorAccessToken(user);
             const refreshToken = generatorRefreshToken(user);
             refreshTokens.push(refreshToken);
+            console.log(refreshToken, refreshTokens);
 
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true,
@@ -71,7 +72,6 @@ export const login = async (req, res) => {
 export const refreshToken = async (req, res) => {
     try {
         const refreshToken = req.cookies.refreshToken;
-        console.log(req.cookies);
         if (!refreshToken) {
             res.status(401).json('You are not Authenticated!');
             return;
