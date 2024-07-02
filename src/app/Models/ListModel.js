@@ -2,10 +2,8 @@ import mongoose from 'mongoose';
 
 const Schema = new mongoose.Schema(
     {
-        reserved: {
-            require: true,
-            type: String,
-        },
+        date: String,
+        hours: Array,
     },
     { timestamps: true },
 );
