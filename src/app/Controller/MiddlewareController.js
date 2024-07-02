@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 export const verifyLogin = (req, res, next) => {
-    const accessToken = req.headers?.token?.split(' ')[1];
+    const accessToken = req.cookies.accessToken;
     if (accessToken) {
         jwt.verify(accessToken, process.env.CODE_SIGN_JWT, (err, user) => {
             if (err) {

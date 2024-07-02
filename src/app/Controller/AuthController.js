@@ -2,15 +2,9 @@ import { AccountsModel } from '../Models/AccountsModel.js';
 import jwt from 'jsonwebtoken';
 import sendEmailForgotPassword from '../utils/sendEmail.js';
 import notifyEmail from '../utils/notifyEmail.js';
-let refreshTokens = [];
 
-const generatorAccessToken = (user, timeExp = '10s') => {
-    return jwt.sign({ _id: user._id }, process.env.CODE_SIGN_JWT, {
-        expiresIn: timeExp,
-    });
-};
-const generatorRefreshToken = (user) => {
-    return jwt.sign({ _id: user._id }, process.env.REFRESH_CODE_SIGN_JWT);
+const generatorAccessToken = (user) => {
+    return jwt.sign({ _id: user._id }, process.env.CODE_SIGN_JWT);
 };
 
 //
@@ -26,7 +20,18 @@ export const getAllUsers = async (req, res) => {
 // register
 export const registerUser = async (req, res) => {
     const newUser = req.body;
+    newUser.role = 'user';
     try {
+        const userExist = await AccountsModel.findOne({
+            email: req.body.email,
+        });
+        if (userExist) {
+            return res.status(400).json({
+                statusCode: 400,
+                message: 'Email đã tồn tại',
+            });
+        }
+
         const user = await AccountsModel(newUser);
         await user.save();
         res.status(200).json(user);
@@ -37,21 +42,18 @@ export const registerUser = async (req, res) => {
 
 // login
 export const login = async (req, res) => {
+    console.log(req.body);
     try {
         const user = await AccountsModel.findOne({
-            userName: req.body.params.userName,
-            password: req.body.params.password,
+            email: req.body.email,
+            password: req.body.password,
         });
         if (!user) {
-            res.status(401).json('Không tìm thấy người dùng');
+            res.status(401).json({ statusCode: 400, message: 'Không tìm thấy người dùng' });
         } else {
             const { password, ...orthers } = user._doc;
             const token = generatorAccessToken(user);
-            const refreshToken = generatorRefreshToken(user);
-            refreshTokens.push(refreshToken);
-            console.log(refreshToken, refreshTokens);
-
-            res.cookie('refreshToken', refreshToken, {
+            res.cookie('accessToken', token, {
                 httpOnly: true,
                 secure: true, // Đảm bảo sử dụng kết nối HTTPS
                 path: '/',
@@ -69,42 +71,15 @@ export const login = async (req, res) => {
         res.status(400).json({ error: err });
     }
 };
-export const refreshToken = async (req, res) => {
-    try {
-        const refreshToken = req.cookies.refreshToken;
-        if (!refreshToken) {
-            res.status(401).json('You are not Authenticated!');
-            return;
-        }
-
-        if (!refreshTokens.includes(refreshToken)) {
-            return res.status(403).json('Token is not valid!!!!!!!!!!!!!!!!');
-        }
-        jwt.verify(refreshToken, process.env.REFRESH_CODE_SIGN_JWT, (err, user) => {
-            if (err) {
-                console.log(err);
-            }
-            refreshTokens = refreshTokens.filter((rfToken) => rfToken !== refreshToken);
-            const newAccessToken = generatorAccessToken(user);
-            const newRefreshToken = generatorRefreshToken(user);
-            refreshTokens.push(newRefreshToken);
-            res.cookie('refreshToken', newRefreshToken, {
-                httpOnly: true,
-                secure: true, // Đảm bảo sử dụng kết nối HTTPS
-                path: '/',
-                origin: `${process.env.ORIGIN_FRONT_END}`,
-                sameSite: 'none',
-            });
-            res.status(200).json({ accessToken: newAccessToken });
-        });
-    } catch (error) {
-        res.status(401).json(error);
-    }
-};
 
 export const logout = async (req, res) => {
-    refreshTokens = refreshTokens.filter((rfToken) => rfToken !== req.cookies.refreshToken);
-    res.clearCookie('refreshToken');
+    res.cookie('accessToken', '', {
+        httpOnly: true,
+        secure: true, // Đảm bảo sử dụng kết nối HTTPS
+        path: '/',
+        origin: `${process.env.ORIGIN_FRONT_END}`,
+        sameSite: 'none',
+    });
     res.status(200).json('Logout success!');
 };
 export const updateCart = async (req, res) => {
@@ -141,63 +116,4 @@ export const updateCart = async (req, res) => {
     }
 
     return res.status(200).json(userAfterUpdate);
-};
-let listTokenForgotPass = [];
-
-export const forgot = async (req, res) => {
-    listTokenForgotPass = [];
-    const email = req.body.params.email;
-    const user = await AccountsModel.findOne({ email: email });
-    if (!user) {
-        return res.status(400).json('Không tìm thấy người dùng');
-    }
-    const accessTokenForgotPass = jwt.sign({}, process.env.CODE_SIGN_JWT, {
-        expiresIn: '600s',
-    });
-    try {
-        const respon = await sendEmailForgotPassword(user, accessTokenForgotPass);
-        res.status(200).json('send email sussess');
-    } catch (error) {
-        res.status(401).json('send email failed');
-    }
-};
-
-export const forgotCode = async (req, res) => {
-    const email = req.body.params.email;
-    const newPassword = req.body.params.password;
-    const token = req.body.params.token;
-    if (listTokenForgotPass.includes(token)) {
-        return res.status(400).json('Token is not valid');
-    }
-    try {
-        const user = await AccountsModel.findOneAndUpdate(
-            { email: email },
-            {
-                password: newPassword,
-            },
-            { new: true },
-        );
-        listTokenForgotPass.push(token);
-        res.status(200).json('Successfully Forgot Password');
-    } catch (error) {
-        res.status(400).json('Cant not find user and update');
-    }
-};
-
-export const notifyEmaileToUser = async (req, res) => {
-    const email = req.body.params.email;
-    const locate = req.body.params.locate;
-    const name = req.body.params.name;
-
-    const information = req.body.params.information;
-    const user = await AccountsModel.findOne({ email: email });
-    if (!user) {
-        return res.status(401).json('Không tìm thấy người dùng');
-    }
-    try {
-        const resq = await notifyEmail(user, information, locate, name);
-        res.status(200).json('Notify to user success');
-    } catch (error) {
-        res.status(400).json('Notify to user failed');
-    }
 };

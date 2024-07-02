@@ -11,17 +11,10 @@ const Schema = new mongoose.Schema(
             require: true,
         },
         role: {
-            type: Number,
-            require: true,
-        },
-        photoURL: {
             type: String,
-        },
-        cart: {
-            type: Array,
             require: true,
         },
-        loved: {
+        listDateBooked: {
             type: Array,
             require: true,
         },

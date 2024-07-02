@@ -1,8 +1,10 @@
-import productRoutes from './productRoutes.js';
+import BookingRoutes from './BookingRoutes.js';
 import AuthRoutes from './AuthRoutes.js';
+import listRoutes from './ListRoutes.js';
+
 function routes(app) {
-    app.use('/search', productRoutes);
     app.use('/auth', AuthRoutes);
-    // app.use('/create', productRoutes);
+    app.use('/booking', BookingRoutes);
+    app.use('/list', listRoutes);
 }
 export default routes;
