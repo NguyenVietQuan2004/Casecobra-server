@@ -59,6 +59,7 @@ export const login = async (req, res) => {
                 path: '/',
                 origin: `${process.env.ORIGIN_FRONT_END}`,
                 sameSite: 'none',
+                maxAge: 365 * 24 * 60 * 60 * 1000,
             });
             res.status(200).json({
                 user: {

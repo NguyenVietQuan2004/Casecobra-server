@@ -10,12 +10,12 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm install
-RUN npm install -g @babel/core @babel/cli
 
 # Copy the rest of the application code
 COPY . .
 
-RUN npm run build-src
+# Expose port 3000 (or your backend port)
+EXPOSE 5000
 
 # Command to run the backend server
-CMD ["npm", "run","build"]
+CMD ["npm", "start"]
