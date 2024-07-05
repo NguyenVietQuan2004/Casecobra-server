@@ -6,6 +6,7 @@ export const addBooking = async (req, res) => {
         const bookingExist = await ListModel.findOne({ date: req.body.date, hours: { $in: req.body.hours } });
         if (bookingExist) return res.status(400).json({ statusCode: 401, message: 'Ngày này không tồn tại' });
         const user = await AccountsModel.findOne({ _id: req.user._id });
+
         let oldList = user.listDateBooked.filter((item) => {
             return item.date !== req.body.date;
         });
@@ -21,6 +22,7 @@ export const addBooking = async (req, res) => {
             { _id: req.user._id },
             {
                 listDateBooked: [...oldList, hasBookDateIn],
+                confirm: 'no',
             },
             {
                 new: true,

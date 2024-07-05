@@ -8,14 +8,30 @@ const generatorAccessToken = (user) => {
 
 //
 export const getAllUsers = async (req, res) => {
+    const currentPage = parseInt(req.query.currentPage) || 1; // Trang hiện tại (mặc định là trang 1)
+    const pageSize = parseInt(req.query.pageSize) || 10; // Số lượng tài liệu trên mỗi trang (mặc định là 10)
+    const skip = (currentPage - 1) * pageSize;
     try {
         const users = await AccountsModel.find({
             confirm: req.query.confirm,
             role: 'user',
             listDateBooked: { $exists: true, $not: { $size: 0 } },
-        }).select('-password -role');
+        })
+            .select('-password -role')
+            .skip(skip)
+            .limit(pageSize);
 
-        res.status(200).json(users);
+        const totalUsers = await AccountsModel.countDocuments({
+            confirm: req.query.confirm,
+            role: 'user',
+            listDateBooked: { $exists: true, $not: { $size: 0 } },
+        });
+        const totalPages = Math.ceil(totalUsers / pageSize);
+        res.status(200).json({
+            users,
+            currentPage,
+            totalPages,
+        });
     } catch (err) {
         res.status(400).json({ error: err });
     }
