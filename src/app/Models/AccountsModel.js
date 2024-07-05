@@ -13,14 +13,24 @@ const Schema = new mongoose.Schema(
         role: {
             type: String,
             require: true,
+            default: 'user',
         },
         listDateBooked: {
             type: Array,
             require: true,
         },
+        numberPhone: {
+            type: String,
+            require: true,
+        },
         email: {
             type: String,
             require: true,
+        },
+        confirm: {
+            type: String,
+            require: true,
+            default: 'no',
         },
     },
     { timestamps: true },

@@ -1,7 +1,6 @@
 import { AccountsModel } from '../Models/AccountsModel.js';
 import jwt from 'jsonwebtoken';
-import sendEmailForgotPassword from '../utils/sendEmail.js';
-import notifyEmail from '../utils/notifyEmail.js';
+import { ListModel } from '../Models/ListModel.js';
 
 const generatorAccessToken = (user) => {
     return jwt.sign({ _id: user._id }, process.env.CODE_SIGN_JWT);
@@ -10,21 +9,47 @@ const generatorAccessToken = (user) => {
 //
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await AccountsModel.find();
+        const users = await AccountsModel.find({
+            confirm: req.query.confirm,
+            role: 'user',
+            listDateBooked: { $exists: true, $not: { $size: 0 } },
+        }).select('-password -role');
 
         res.status(200).json(users);
     } catch (err) {
         res.status(400).json({ error: err });
     }
 };
+export const getUser = async (req, res) => {
+    try {
+        let user = null;
+        if (!req.user.role === 'admin') {
+            return res.status(403).json('Không có quyền');
+        }
+        if (req.body.email === 'admin@gmail.com') {
+            user = await AccountsModel.find({
+                role: 'admin',
+                listDateBooked: { $exists: true, $not: { $size: 0 } },
+            }).select('-password -role');
+        } else {
+            user = await AccountsModel.find({
+                role: 'user',
+                email: req.body.email,
+            }).select('-password -role');
+        }
+
+        res.status(200).json(user);
+    } catch (err) {
+        res.status(400).json({ error: err });
+    }
+};
 // register
 export const registerUser = async (req, res) => {
-    const newUser = req.body;
-    newUser.role = 'user';
     try {
         const userExist = await AccountsModel.findOne({
             email: req.body.email,
         });
+        console.log(userExist);
         if (userExist) {
             return res.status(400).json({
                 statusCode: 400,
@@ -32,7 +57,7 @@ export const registerUser = async (req, res) => {
             });
         }
 
-        const user = await AccountsModel(newUser);
+        const user = await AccountsModel(req.body);
         await user.save();
         res.status(200).json(user);
     } catch (err) {
@@ -42,7 +67,6 @@ export const registerUser = async (req, res) => {
 
 // login
 export const login = async (req, res) => {
-    console.log(req.body);
     try {
         const user = await AccountsModel.findOne({
             email: req.body.email,
@@ -83,38 +107,106 @@ export const logout = async (req, res) => {
     });
     res.status(200).json('Logout success!');
 };
-export const updateCart = async (req, res) => {
-    const user = await AccountsModel.findOne({ _id: req.user._id });
-    let userAfterUpdate;
-    const field = req.params.slug;
-    const newCart = user[[field]].filter((car) => {
-        if (Object.keys(car)[0] !== req.body.params.IDProduct) {
-            return car;
-        }
-    });
-
-    if (req.body.params.query == 'add') {
-        userAfterUpdate = await AccountsModel.findOneAndUpdate(
-            { _id: req.user._id },
-            {
-                [field]: [
-                    ...newCart,
-                    { [req.body.params.IDProduct]: req.body.params.number, option: req.body.params.option },
-                ],
-            },
-            {
-                new: true,
-            },
-        );
-    } else {
-        userAfterUpdate = await AccountsModel.findOneAndUpdate(
-            { _id: req.user._id },
-            {
-                [field]: newCart,
-            },
-            { new: true },
-        );
+export const updateUser = async (req, res) => {
+    try {
+        const user = await AccountsModel.findOne({
+            email: req.body.email,
+        });
+        if (!user) return res.status(403).json({ statusCode: 403, message: 'Không tím thấy user' });
+        const newUser = await AccountsModel.findByIdAndUpdate(user._id, {
+            confirm: 'yes',
+        });
+        res.status(200).json('Update confirm thành công');
+    } catch (error) {
+        res.status(500).json({ statusCode: 500, message: 'Lỗi khi cập nhật server' });
     }
+};
+export const deleteListBooking = async (req, res) => {
+    try {
+        const user = await AccountsModel.findOne({
+            email: req.body.email,
+        });
+        if (!user) return res.status(403).json({ statusCode: 403, message: 'Không tím thấy user' });
+        const listBooking = [];
+        //  {
+        // date: 24/04/2024 , hours[1,2,3]
+        // }
+        for (let i = 0; i < user.listDateBooked.length; i++) {
+            listBooking.push(user.listDateBooked[i]);
+        }
+        await AccountsModel.findByIdAndUpdate(user._id, {
+            listDateBooked: [],
+            confirm: 'no',
+        });
+        for (let i = 0; i < listBooking.length; i++) {
+            const dateField = await ListModel.findOne({
+                date: listBooking[i].date,
+            });
+            if (listBooking[i].hours.length === dateField.hours.length) {
+                await ListModel.findOneAndDelete({ date: listBooking[i].date });
+            } else {
+                const listHourNew = dateField.hours.filter((item) => {
+                    return !listBooking[i].hours.includes(item);
+                });
+                await ListModel.findOneAndUpdate(
+                    { date: listBooking[i].date },
+                    {
+                        hours: listHourNew,
+                    },
+                );
+            }
+        }
+        res.status(200).json('Clear listBooking người dùng thành công');
+    } catch (error) {
+        res.status(500).json({ statusCode: 500, message: 'Lỗi khi cập nhật server' });
+    }
+};
+export const unlock = async (req, res) => {
+    try {
+        const userAdmin = await AccountsModel.findOne({
+            role: 'admin',
+        });
+        if (!userAdmin) return res.status(403).json({ statusCode: 403, message: 'Không tím thấy user' });
+        //  {
+        // date: 24/04/2024 , hours[1,2,3]
+        // }
+        const oldList = userAdmin.listDateBooked.filter((item) => {
+            return item.date !== req.body.date;
+        });
+        console.log('bbbb', userAdmin.listDateBooked, req.body.date);
+        const dateDelete = userAdmin.listDateBooked.find((item) => {
+            return item.date === req.body.date;
+        });
+        await AccountsModel.findOneAndUpdate(
+            { role: 'admin' },
+            {
+                listDateBooked: [...oldList],
+            },
+        );
+        const dateField = await ListModel.findOne({
+            date: dateDelete.date,
+        });
+        console.log('data field', dateField);
+        if (dateDelete.hours.length === dateField.hours.length) {
+            console.log(1);
 
-    return res.status(200).json(userAfterUpdate);
+            await ListModel.findOneAndDelete({ date: dateDelete.date });
+            console.log(2);
+        } else {
+            console.log(3);
+
+            const listHourNew = dateField.hours.filter((item) => {
+                return !dateDelete.hours.includes(item);
+            });
+            await ListModel.findOneAndUpdate(
+                { date: dateDelete.date },
+                {
+                    hours: listHourNew,
+                },
+            );
+        }
+        res.status(200).json('Unlock book dùng thành công');
+    } catch (error) {
+        res.status(500).json({ statusCode: 500, message: 'Lỗi khi cập nhật server' });
+    }
 };

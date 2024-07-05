@@ -2,7 +2,6 @@ import { AccountsModel } from '../Models/AccountsModel.js';
 import { ListModel } from '../Models/ListModel.js';
 
 export const addBooking = async (req, res) => {
-    console.log(req.body);
     try {
         const bookingExist = await ListModel.findOne({ date: req.body.date, hours: { $in: req.body.hours } });
         if (bookingExist) return res.status(400).json({ statusCode: 401, message: 'Ngày này không tồn tại' });
