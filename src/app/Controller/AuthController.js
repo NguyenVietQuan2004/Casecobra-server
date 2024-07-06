@@ -99,7 +99,7 @@ export const login = async (req, res) => {
                 path: '/',
                 origin: `${process.env.ORIGIN_FRONT_END}`,
                 sameSite: 'none',
-                partitioned,
+                partitioned: true,
                 maxAge: 365 * 24 * 60 * 60 * 1000,
             });
             res.status(200).json({
@@ -119,7 +119,7 @@ export const logout = async (req, res) => {
         httpOnly: true,
         secure: true, // Đảm bảo sử dụng kết nối HTTPS
         path: '/',
-        partitioned,
+        partitioned: true,
         origin: `${process.env.ORIGIN_FRONT_END}`,
         sameSite: 'none',
     });
