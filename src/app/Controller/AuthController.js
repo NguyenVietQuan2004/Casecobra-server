@@ -93,15 +93,21 @@ export const login = async (req, res) => {
         } else {
             const { password, ...orthers } = user._doc;
             const token = generatorAccessToken(user);
-            res.cookie('accessToken', token, {
-                httpOnly: true,
-                secure: true, // Đảm bảo sử dụng kết nối HTTPS
-                path: '/',
-                origin: `${process.env.ORIGIN_FRONT_END}`,
-                sameSite: 'none',
-                Partitioned,
-                maxAge: 365 * 24 * 60 * 60 * 1000,
-            });
+            const oneYearFromNow = new Date();
+            oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+            res.setHeader(
+                'Set-Cookie',
+                `accessToken=${token}; Path=/; HttpOnly; Expires=${oneYearFromNow.toUTCString()}; Secure; Partitioned; SameSite=None`,
+            );
+            // res.cookie('accessToken', token, {
+            //     httpOnly: true,
+            //     secure: true, // Đảm bảo sử dụng kết nối HTTPS
+            //     path: '/',
+            //     origin: `${process.env.ORIGIN_FRONT_END}`,
+            //     sameSite: 'none',
+            //     Partitioned,
+            //     maxAge: 365 * 24 * 60 * 60 * 1000,
+            // });
             res.status(200).json({
                 user: {
                     ...orthers,
@@ -115,14 +121,7 @@ export const login = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-    res.cookie('accessToken', '', {
-        httpOnly: true,
-        secure: true, // Đảm bảo sử dụng kết nối HTTPS
-        path: '/',
-        Partitioned,
-        origin: `${process.env.ORIGIN_FRONT_END}`,
-        sameSite: 'none',
-    });
+    res.setHeader('Set-Cookie', `accessToken=; Path=/; HttpOnly; Secure; Partitioned; SameSite=None`);
     res.status(200).json('Logout success!');
 };
 export const updateUser = async (req, res) => {
