@@ -42,7 +42,7 @@ export const getUser = async (req, res) => {
         if (!req.user.role === 'admin') {
             return res.status(403).json('Không có quyền');
         }
-        if (req.body.email === 'admin@gmail.com') {
+        if (req.body.email === process.env.EMAIL_ADMIN) {
             user = await AccountsModel.find({
                 role: 'admin',
                 listDateBooked: { $exists: true, $not: { $size: 0 } },
